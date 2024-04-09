@@ -12,7 +12,13 @@
 
 // other macros
 #define loaded true
-#define lnloaded false
+#define unloaded false
+
+#define success 0
+#define fail 1
+
+// global vars
+char Question[4] = {0};
 
 // typedefs
 typedef struct {
@@ -68,7 +74,7 @@ static Key_t* CreateKey() {
     } while (IdAlreadyExists);
 
     Key_t* Key = (Key_t*)malloc(sizeof(Key_t));
-    if (!Key) exit(EXIT_FAILURE);
+    if (!Key) return fail;
 
     memset(Key, 0, sizeof(Key_t));
 
@@ -90,26 +96,64 @@ static Key_t* CreateKey() {
 }
 
 static int DeleteKey(unsigned long KeyId) {
+    bool found = false;
+    input("are you sure? ", &Question, 's');
+
+    if (strcmp(Question, "y") == 0) {
+        for (int i = 0; i < KeyList_s; i++) {
+            if (KeyList.Addresses[i] != 0) {
+                Key_t* Key = (Key_t*)KeyList.Addresses[i];
+
+                if (KeyId == 69 || Key->KeyId == KeyId) {
+                    unsigned long SavedId = Key->KeyId;
+
+                    if (KeyId != 69 || Key->KeyId != 0) {
+                        memset(Key, 0, sizeof(Key_t));
+                        free(Key);
+
+                        KeyList.Addresses[i] = 0;
+                        KeyList.Count--;
+
+                        printf("[^] deleted key '%lu' from element %d\n", SavedId, i);
+                    }
+                    if (KeyId != 69) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (KeyId != 69 && !found) {
+        printf("[!] key '%lu' not found\n", KeyId);
+        return fail;
+    }
+    
+    return success;
+}
+
+static int CancelKey(unsigned long KeyId) {
     for (int i = 0; i < KeyList_s; i++) {
         if (KeyList.Addresses[i] != 0) {
             Key_t* Key = (Key_t*)KeyList.Addresses[i];
+
             if (Key->KeyId == KeyId) {
-                unsigned long SavedId = Key->KeyId;
+                input("are you sure? ", &Question, 's');
 
-                memset(Key, 0, sizeof(Key_t));
-                free(Key);
+                if (strcmp(Question, "y") == 0) {
+                    memset(Key->KeyItems, 0, sizeof(Key->KeyItems));
+                    Key->KeyBalance = (unsigned long)0;
 
-                KeyList.Addresses[i] = 0;
-                KeyList.Count--;
-
-                printf("[^] deleted key '%lu'\n", SavedId);
-                return 0;
+                    printf("[+] canceled key '%lu'\n", Key->KeyId);
+                    return success;
+                }
             }
         }
     }
 
     printf("[!] key '%lu' not found\n", KeyId);
-    return NULL;
+    return fail;
 }
 
 static int GetInfo(unsigned long KeyId) {
@@ -118,23 +162,24 @@ static int GetInfo(unsigned long KeyId) {
 
         printf("[+] keys running: %lu\n", KeyList.Count);
 
-        input("list all keys? ", &UserInput, 's');
-        if (strcmp(UserInput, "y") == 0) {
-            for (int i = 0; i < KeyList_s; i++) {
-                if (KeyList.Addresses[i] != 0) {
-                    printf("[%p]   : %lu\n", (void*)KeyList.Addresses[i], ((Key_t*)(KeyList.Addresses[i]))->KeyId);
+        if (KeyList.Count != (unsigned long)0) {
+            input("list all keys? ", &UserInput, 's');
+            if (strcmp(UserInput, "y") == 0) {
+                for (int i = 0; i < KeyList_s; i++) {
+                    if (KeyList.Addresses[i] != 0) {
+                        printf("[%p]   : %lu\n", (void*)KeyList.Addresses[i], ((Key_t*)(KeyList.Addresses[i]))->KeyId);
+                    }
                 }
+                return success;
             }
         }
-        return 0;
     } else {
-        return 1; // por enquanto
+        return fail; // por enquanto
     }
 }
 
 int main(void) {
     char UserInput[24] = {0};
-    char Question[12] = {0};
 
     unsigned long KeyId = 0;
 
@@ -143,15 +188,17 @@ int main(void) {
         input(": ", &UserInput, 's');
 
         if (strcmp(UserInput, "create") == 0) {
-            CreateKey();
+            if (CreateKey() == fail) {
+                puts("[!!] catastrophic error"); exit(EXIT_FAILURE);
+            }
         } else if (strcmp(UserInput, "del") == 0 || strcmp(UserInput, "delete") == 0) {
             input("", &KeyId, 'u');
 
-            input("are you sure? ", &Question, 's');
+            DeleteKey(KeyId);
+        } else if (strcmp(UserInput, "cancel") == 0) {
+            input("", &KeyId, 'u');
 
-            if (strcmp(Question, "y") == 0) {
-                DeleteKey(KeyId);
-            }
+            CancelKey(KeyId);
         } else if (strcmp(UserInput, "info") == 0) {
             input("", UserInput, 's');
 
