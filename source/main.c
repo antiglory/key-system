@@ -162,14 +162,14 @@ static int AddInfo(unsigned long KeyId, const char* info) {
             Key_t* Key = (Key_t*)KeyList.Addresses[i];
 
             if (Key->KeyId == KeyId) {
-                size_t currentLength = strlen(Key->KeyItems);
-                size_t newLength = currentLength + strlen(info) + 2;
-                if (newLength > sizeof(Key->KeyItems)) {
+                size_t CurrentLength = strlen(Key->KeyItems);
+                size_t NewLength = CurrentLength + strlen(info) + 2;
+                if (NewLength > sizeof(Key->KeyItems)) {
                     printf("[!] failed to add item to key '%lu': exceeded maximum length\n", KeyId);
                     return fail;
                 }
 
-                if (currentLength > 0) {
+                if (CurrentLength > 0) {
                     strcat(Key->KeyItems, "\n");
                 }
                 strcat(Key->KeyItems, info);
@@ -200,7 +200,7 @@ static int GetItems(unsigned long KeyId) {
         }
     }
 
-    printf("[!] Key '%lu' not found\n", KeyId);
+    printf("[!] key '%lu' not found\n", KeyId);
     return fail;
 }
 
