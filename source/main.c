@@ -114,7 +114,7 @@ static int DeleteKey(unsigned long KeyId) {
                         KeyList.Addresses[i] = 0;
                         KeyList.Count--;
 
-                        printf("[^] deleted key '%lu' from element %d\n", SavedId, i);
+                        printf("[^] deleted key '%lu' ; element '%d'\n", SavedId, i);
                     }
                     if (KeyId != 69) {
                         found = true;
@@ -156,6 +156,54 @@ static int CancelKey(unsigned long KeyId) {
     return fail;
 }
 
+static int AddInfo(unsigned long KeyId, const char* info) {
+    for (int i = 0; i < KeyList_s; i++) {
+        if (KeyList.Addresses[i] != 0) {
+            Key_t* Key = (Key_t*)KeyList.Addresses[i];
+
+            if (Key->KeyId == KeyId) {
+                size_t currentLength = strlen(Key->KeyItems);
+                size_t newLength = currentLength + strlen(info) + 2;
+                if (newLength > sizeof(Key->KeyItems)) {
+                    printf("[!] failed to add item to key '%lu': exceeded maximum length\n", KeyId);
+                    return fail;
+                }
+
+                if (currentLength > 0) {
+                    strcat(Key->KeyItems, "\n");
+                }
+                strcat(Key->KeyItems, info);
+
+                printf("[+] added item to key '%lu'\n", KeyId);
+                return success;
+            }
+        }
+    }
+
+    printf("[!] key '%lu' not found\n", KeyId);
+    return fail;
+}
+
+static int GetItems(unsigned long KeyId) {
+    for (int i = 0; i < KeyList_s; i++) {
+        if (KeyList.Addresses[i] != 0) {
+            Key_t* Key = (Key_t*)KeyList.Addresses[i];
+
+            if (Key->KeyId == KeyId) {
+                if (strlen(Key->KeyItems) == 0) {
+                    printf("[!] no item available for key '%lu'\n", KeyId);
+                } else {
+                    printf("[-] getting items in the key '%lu':\n\n%s\n", KeyId, Key->KeyItems);
+                }
+                return success;
+            }
+        }
+    }
+
+    printf("[!] Key '%lu' not found\n", KeyId);
+    return fail;
+}
+
 static int GetInfo(unsigned long KeyId) {
     if (KeyId == NULL) {
         char UserInput[12] = {0};
@@ -179,7 +227,7 @@ static int GetInfo(unsigned long KeyId) {
 }
 
 int main(void) {
-    char UserInput[24] = {0};
+    char UserInput[128] = {0};
 
     unsigned long KeyId = 0;
 
@@ -199,6 +247,15 @@ int main(void) {
             input("", &KeyId, 'u');
 
             CancelKey(KeyId);
+        } else if (strcmp(UserInput, "add") == 0) {
+            input("", &KeyId, 'u');
+            fgets(UserInput, sizeof(UserInput), stdin);
+
+            AddInfo(KeyId, UserInput);
+        } else if (strcmp(UserInput, "get") == 0) {
+            input("", &KeyId, 'u');
+
+            GetItems(KeyId);
         } else if (strcmp(UserInput, "info") == 0) {
             input("", UserInput, 's');
 
