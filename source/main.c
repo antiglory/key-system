@@ -226,7 +226,13 @@ static int GetInfo(unsigned long KeyId) {
     }
 }
 
+static void setup() {
+    memset(KeyList, 0, sizeof(KeyList));
+}
+
 int main(void) {
+    setup();
+    
     char UserInput[128] = {0};
 
     unsigned long KeyId = 0;
