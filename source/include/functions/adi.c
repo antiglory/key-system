@@ -46,7 +46,7 @@ void input(char* imsg, void* data, enum DataType type) {
             scanf("%d", (signed int*)data);
             break;
     default:
-      printf("[!] unknown data type\n");
-      exit(EXIT_FAILURE);
-  }
+        printf("[!] unknown data type\n");
+        exit(EXIT_FAILURE);
+    }
 }
