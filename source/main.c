@@ -7,15 +7,14 @@
 
 #include "include/functions/adi.c"
 
-// sizes
+// macros
 #define KeyList_s 64 // key list size
 
-// other macros
 #define loaded true
 #define unloaded false
 
-#define success 0
-#define fail 1
+#define success true
+#define fail false
 
 // global vars
 char Question[4] = {0};
@@ -46,13 +45,15 @@ static Key_t* CreateKey() {
 
     if (KeyList_s == 64) {
         int TotalKeys = 0;
+
         for (int i = 0; i < KeyList_s; i++) {
-            if (KeyList.Addresses[i] != 0) {
+            if (KeyList.Addresses[i] != 0)
                 TotalKeys++;
-            }
         }
+
         if (TotalKeys >= KeyList_s) {
             printf("[!] can't create more keys, the limit has already been reached (64 keys)\n");
+
             TotalKeys = 0;
             return NULL;
         }
@@ -64,7 +65,8 @@ static Key_t* CreateKey() {
 
         for (int i = 0; i < KeyList_s; i++) {
             if (KeyList.Addresses[i] != 0) {
-                Key_t* existingKey = (Key_t*)KeyList.Addresses[i];
+                const Key_t* existingKey = (Key_t*)KeyList.Addresses[i];
+
                 if (existingKey->KeyId == GeneratedKeyId) {
                     IdAlreadyExists = true;
                     break;
@@ -74,7 +76,7 @@ static Key_t* CreateKey() {
     } while (IdAlreadyExists);
 
     Key_t* Key = (Key_t*)malloc(sizeof(Key_t));
-    if (!Key) return fail;
+    if (!Key) return NULL;
 
     memset(Key, 0, sizeof(Key_t));
 
@@ -92,10 +94,11 @@ static Key_t* CreateKey() {
     KeyList.Count++;
 
     printf("[+] created key '%lu'\n", Key->KeyId);
+
     return Key;
 }
 
-static int DeleteKey(unsigned long KeyId) {
+static int DeleteKey(const unsigned long KeyId) {
     bool found = false;
     input("are you sure? ", &Question, 's');
 
@@ -105,7 +108,7 @@ static int DeleteKey(unsigned long KeyId) {
                 Key_t* Key = (Key_t*)KeyList.Addresses[i];
 
                 if (KeyId == 69 || Key->KeyId == KeyId) {
-                    unsigned long SavedId = Key->KeyId;
+                    const unsigned long SavedId = Key->KeyId;
 
                     if (KeyId != 69 || Key->KeyId != 0) {
                         memset(Key, 0, sizeof(Key_t));
@@ -116,6 +119,7 @@ static int DeleteKey(unsigned long KeyId) {
 
                         printf("[^] deleted key '%lu' ; element '%d'\n", SavedId, i);
                     }
+
                     if (KeyId != 69) {
                         found = true;
                         break;
@@ -127,6 +131,7 @@ static int DeleteKey(unsigned long KeyId) {
 
     if (KeyId != 69 && !found) {
         printf("[!] key '%lu' not found\n", KeyId);
+
         return fail;
     }
     
@@ -146,6 +151,7 @@ static int CancelKey(unsigned long KeyId) {
                     Key->KeyBalance = (unsigned long)0;
 
                     printf("[+] canceled key '%lu'\n", Key->KeyId);
+
                     return success;
                 }
             }
@@ -153,6 +159,7 @@ static int CancelKey(unsigned long KeyId) {
     }
 
     printf("[!] key '%lu' not found\n", KeyId);
+
     return fail;
 }
 
@@ -162,19 +169,21 @@ static int AddInfo(unsigned long KeyId, const char* info) {
             Key_t* Key = (Key_t*)KeyList.Addresses[i];
 
             if (Key->KeyId == KeyId) {
-                size_t CurrentLength = strlen(Key->KeyItems);
-                size_t NewLength = CurrentLength + strlen(info) + 2;
+                const size_t CurrentLength = strlen(Key->KeyItems);
+                const size_t NewLength = CurrentLength + strlen(info) + 2;
+
                 if (NewLength > sizeof(Key->KeyItems)) {
                     printf("[!] failed to add item to key '%lu': exceeded maximum length\n", KeyId);
                     return fail;
                 }
 
-                if (CurrentLength > 0) {
+                if (CurrentLength > 0)
                     strcat(Key->KeyItems, "\n");
-                }
+
                 strcat(Key->KeyItems, info);
 
                 printf("[+] added item to key '%lu'\n", KeyId);
+
                 return success;
             }
         }
@@ -201,11 +210,12 @@ static int GetItems(unsigned long KeyId) {
     }
 
     printf("[!] key '%lu' not found\n", KeyId);
+
     return fail;
 }
 
-static int GetInfo(unsigned long KeyId) {
-    if (KeyId == NULL) {
+static int GetInfo(const unsigned long KeyId) {
+    if (!KeyId) {
         char UserInput[12] = {0};
 
         printf("[+] keys running: %lu\n", KeyList.Count);
@@ -218,21 +228,17 @@ static int GetInfo(unsigned long KeyId) {
                         printf("[%p]   : %lu\n", (void*)KeyList.Addresses[i], ((Key_t*)(KeyList.Addresses[i]))->KeyId);
                     }
                 }
+
                 return success;
             }
         }
-    } else {
-        return fail; // por enquanto
-    }
-}
+    } else
+        return fail; // for now
 
-static void setup() {
-    memset(KeyList, 0, sizeof(KeyList));
+    return success;
 }
 
 int main(void) {
-    setup();
-    
     char UserInput[128] = {0};
 
     unsigned long KeyId = 0;
@@ -242,7 +248,7 @@ int main(void) {
         input(": ", &UserInput, 's');
 
         if (strcmp(UserInput, "create") == 0) {
-            if (CreateKey() == fail) {
+            if (!CreateKey()) {
                 puts("[!!] catastrophic error"); exit(EXIT_FAILURE);
             }
         } else if (strcmp(UserInput, "del") == 0 || strcmp(UserInput, "delete") == 0) {
@@ -269,15 +275,13 @@ int main(void) {
                 input("", &KeyId, 'u');
 
                 GetInfo(KeyId);
-            } else if (strcmp(UserInput, "keys") == 0) {
+            } else if (strcmp(UserInput, "keys") == 0)
                 GetInfo((unsigned long)NULL);
-            }
-        } else if (strcmp(UserInput, "clear") == 0) {
+        } else if (strcmp(UserInput, "clear") == 0)
             system("clear");
-        } else if (strcmp(UserInput, "exit") == 0 || strcmp(UserInput, "bye") == 0) {
+        else if (strcmp(UserInput, "exit") == 0 || strcmp(UserInput, "bye") == 0)
             exit(EXIT_SUCCESS);
-        }
     }
 
-    return 0;
+    return 0; // unreachable
 }
