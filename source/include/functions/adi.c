@@ -14,10 +14,12 @@ enum DataType {
     I_PID = 'p'
 };
 
-void input(char* imsg, void* data, enum DataType type) {
+void input(char* imsg, void* data, enum DataType type)
+{
     printf("%s", imsg);
 
-    switch (type) {
+    switch (type)
+    {
         case I_INTEGER:
             scanf("%d", (int*)data);
             break;
