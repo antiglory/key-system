@@ -1,2 +1,2 @@
 # key-system
-a key system for managing stores like restaurants written in C
+a key system for managing restaurants-like written in C
